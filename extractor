@@ -1,0 +1,39 @@
+#!/usr/bin/zsh 
+
+set -e
+
+HEADER="Accept: application/vnd.github.v3+json;"
+URL="https://api.github.com/repos/apache/kafka/pulls"
+PARAMS="?state=closed&perpage=100"
+
+
+[[ -f file.json ]] &&
+	(echo "The file file.json already exists. Do you wish to abort?" && (select yn in "Yes" "No"; do
+		case $yn in
+			Yes ) exit 1;;
+			No ) exit 0;;
+		esac	
+	done))
+
+MAX=`curl -siH "$URL" $URL$PARAMS | grep -oP "(?<=rel=\"next\")(.*)(?=rel=\"last\")" | grep -oP "(?<=&page=)(\w+)" `
+MAX=2
+
+TMP1=$(mktemp)
+TMP2=$(mktemp)
+TMP3=$(mktemp)
+
+curl -sH "$HEADER" "$URL$PARAMS&page=0" > $TMP1 2>&1
+for i in $(seq 1 $MAX); do
+	n=$(awk -v var_i=$i -v var_MAX=$MAX 'BEGIN { printf("%3.0f", var_i/var_MAX*100)}')
+	printf "%${n}s\r" | tr " " "#"
+	curl -sH "$HEADER" "$URL$PARAMS&page=$i" > $TMP2 
+	cat $TMP1 $TMP2 > $TMP3
+	cat $TMP3 > $TMP1
+		
+done;
+
+cat $TMP1 > file.json
+
+[[ -f file.json ]] || 
+	(echo "Downloading..." && 
+	curl -H "$HEADER" $URL$PARAMS > file.json)
