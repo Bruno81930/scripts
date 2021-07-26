@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+import tarfile
+import tempfile
+import os
+import json
+
+import click
+
+@click.command()
+@click.option('-i', '--input', help="File of type tar.gz with a set of json files.", 
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True), required=True)
+def jsoncat(input):
+    json_out = list()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tar = tarfile.open(input, "r:gz")
+        tar.extractall(path=str(tmpdir))
+        for _, _, files in os.walk(tmpdir):
+            for file in files:
+                file = os.path.join(tmpdir, file)
+                with open(file, 'r') as fobj:
+                    json_out = json_out + json.load(fobj)
+    click.echo(json.dumps(json_out))
+        
+
+if __name__ == '__main__':
+    jsoncat()
+
+
