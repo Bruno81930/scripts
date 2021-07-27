@@ -1,6 +1,0 @@
-#!/usr/bin/zsh
-
-DIR="/home/.wallpapers"
-FILE=`ls $DIR | sort -R | tail -1`
-PATH="$DIR/$FILE"
-echo $PATH
